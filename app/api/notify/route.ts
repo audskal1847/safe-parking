@@ -1,34 +1,25 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-function getSupabaseClient() {
-  let url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xufcnthlimejezxjldwt.supabase.co';
-  url = url.trim().replace(/^["']|["']$/g, '');
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = 'https://' + url;
-  }
-
-  let key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  key = key.trim().replace(/^["']|["']$/g, '');
-
-  if (!key) {
-    throw new Error('Supabase Key가 누락되었습니다.');
-  }
-
-  return createClient(url, key);
-}
+const SUPABASE_URL = 'https://xufcnthlimejezxjldwt.supabase.co';
 
 export async function POST(req: Request) {
   try {
+    const serviceKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!serviceKey) {
+      return NextResponse.json({ error: 'Supabase Key가 누락되었습니다.' }, { status: 500 });
+    }
+
+    const supabase = createClient(SUPABASE_URL, serviceKey.trim());
     const { qrToken, type, message } = await req.json();
 
     if (!qrToken) {
       return NextResponse.json({ error: '유효하지 않은 요청입니다.' }, { status: 400 });
     }
 
-    const supabase = getSupabaseClient();
-
-    // 1. 차주 정보 조회
     const { data: card, error } = await supabase
       .from('parking_cards')
       .select('phone_number, plate_number')
@@ -39,7 +30,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '차량 정보를 찾을 수 없습니다.' }, { status: 404 });
     }
 
-    // 2. 전달 메시지 로그
     let textToSend = `[안심주차 알림] 차량(${card.plate_number})\n`;
     if (type === 'MOVE_REQUEST') {
       textToSend += '이동 주차 요청이 도착했습니다. 차량을 확인해주세요.';

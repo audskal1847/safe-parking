@@ -1,32 +1,29 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-function getSupabaseClient() {
-  let url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xufcnthlimejezxjldwt.supabase.co';
-  url = url.trim().replace(/^["']|["']$/g, '');
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = 'https://' + url;
-  }
-
-  let key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  key = key.trim().replace(/^["']|["']$/g, '');
-
-  if (!key) {
-    throw new Error('Supabase Key가 누락되었습니다. Vercel 환경 변수를 확인해주세요.');
-  }
-
-  return createClient(url, key);
-}
+// URL을 직접 고정하여 환경 변수 누락/형식 오류를 원천 차단합니다.
+const SUPABASE_URL = 'https://xufcnthlimejezxjldwt.supabase.co';
 
 export async function POST(req: Request) {
   try {
+    const serviceKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!serviceKey) {
+      return NextResponse.json(
+        { error: 'Vercel 환경 변수(Key)가 누락되었습니다.' },
+        { status: 500 }
+      );
+    }
+
+    const supabase = createClient(SUPABASE_URL, serviceKey.trim());
     const { plateNumber, phoneNumber } = await req.json();
 
     if (!plateNumber || !phoneNumber) {
       return NextResponse.json({ error: '차량 번호와 전화번호를 입력해주세요.' }, { status: 400 });
     }
 
-    const supabase = getSupabaseClient();
     const token = Math.random().toString(36).substring(2, 10);
 
     const { error } = await supabase.from('parking_cards').insert([
