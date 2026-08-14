@@ -1,100 +1,151 @@
 'use client';
 
 import { useState } from 'react';
+import QRCode from 'react-qr-code';
 import { supabase } from '@/lib/supabase';
-import { QRCodeSVG } from 'qrcode.react';
-import { Car, Printer } from 'lucide-react';
+import { Car, Phone, QrCode, CheckCircle, Copy } from 'lucide-react';
 
 export default function DashboardPage() {
   const [plateNumber, setPlateNumber] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [card, setCard] = useState<any>(null);
+  const [qrToken, setQrToken] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    const { data, error } = await supabase
-      .from('parking_cards')
-      .insert({
-        plate_number: plateNumber,
-        phone_number: phoneNumber,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      alert('등록 중 오류가 발생했습니다: ' + error.message);
-    } else {
-      setCard(data);
+    if (!plateNumber || !phoneNumber) {
+      setErrorMsg('차량 번호와 전화번호를 모두 입력해주세요.');
+      return;
     }
-    setLoading(false);
+
+    setLoading(true);
+    setErrorMsg('');
+
+    try {
+      const token = Math.random().toString(36).substring(2, 10);
+
+      const { error } = await supabase.from('parking_cards').insert([
+        {
+          plate_number: plateNumber.replace(/\s+/g, ''),
+          phone_number: phoneNumber.replace(/[^0-9]/g, ''),
+          qr_token: token,
+        },
+      ]);
+
+      if (error) throw error;
+
+      setQrToken(token);
+    } catch (err: any) {
+      setErrorMsg(err.message || '등록 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const callUrl = card
-    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/call/${card.qr_token}`
-    : '';
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const callUrl = qrToken ? `${origin}/call/${qrToken}` : '';
+
+  const copyToClipboard = () => {
+    if (!callUrl) return;
+    navigator.clipboard.writeText(callUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 flex flex-col items-center justify-center">
+    <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2 flex items-center gap-2">
-          <Car className="text-blue-600" /> 안심 주차 카드 관리
-        </h1>
-        <p className="text-sm text-slate-500 mb-6">
-          차량 번호와 연락처를 등록하면 안심 QR 코드가 즉시 생성됩니다.
-        </p>
+        <div className="text-center mb-6">
+          <div className="inline-flex p-3 bg-blue-50 text-blue-600 rounded-2xl mb-3">
+            <Car size={32} />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-800">안심 주차 QR 발급 대시보드</h1>
+          <p className="text-sm text-slate-500 mt-1">차량 번호와 연락처를 등록하여 안심 QR 코드를 생성하세요.</p>
+        </div>
 
-        {!card ? (
+        {!qrToken ? (
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">차량 번호</label>
-              <input
-                type="text"
-                placeholder="예: 12가 3456"
-                value={plateNumber}
-                onChange={(e) => setPlateNumber(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="예: 12가 3456"
+                  value={plateNumber}
+                  onChange={(e) => setPlateNumber(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  required
+                />
+              </div>
             </div>
+
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1">알림받을 휴대폰 번호</label>
-              <input
-                type="tel"
-                placeholder="예: 01012345678"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <label className="block text-xs font-semibold text-slate-600 mb-1">차주 연락처</label>
+              <div className="relative">
+                <input
+                  type="tel"
+                  placeholder="예: 010-1234-5678"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  required
+                />
+              </div>
             </div>
+
+            {errorMsg && <p className="text-xs text-rose-500">{errorMsg}</p>}
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition shadow-md shadow-blue-200"
+              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-100 transition disabled:opacity-50 text-sm flex items-center justify-center gap-2"
             >
-              {loading ? '생성 중...' : 'QR 안심 카드 발급하기'}
+              <QrCode size={18} />
+              {loading ? 'QR 생성 중...' : 'QR 안심 카드 발급하기'}
             </button>
           </form>
         ) : (
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className="p-4 bg-white border-2 border-slate-200 rounded-2xl shadow-sm">
-              <QRCodeSVG value={callUrl} size={180} />
+          <div className="text-center space-y-5">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-semibold">
+              <CheckCircle size={14} /> 발급 완료
             </div>
-            <div>
-              <span className="text-sm bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full font-bold">
-                {card.plate_number}
-              </span>
-              <p className="text-xs text-slate-400 mt-2">이 QR을 인쇄하여 차량 앞유리에 부착하세요.</p>
-              <p className="text-xs text-blue-600 font-mono mt-1 break-all select-all">{callUrl}</p>
+
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center justify-center">
+              <div className="bg-white p-4 rounded-xl shadow-sm">
+                <QRCode value={callUrl} size={180} />
+              </div>
+              <p className="text-base font-bold text-slate-800 mt-4">{plateNumber}</p>
+              <p className="text-xs text-slate-400 mt-0.5">스마트폰으로 스캔하면 바로 안심 호출 페이지가 열립니다.</p>
             </div>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                readOnly
+                value={callUrl}
+                className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-600 select-all"
+              />
+              <button
+                type="button"
+                onClick={copyToClipboard}
+                className="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-medium flex items-center gap-1 transition"
+              >
+                <Copy size={14} /> {copied ? '복사됨' : '복사'}
+              </button>
+            </div>
+
             <button
-              onClick={() => window.print()}
-              className="flex items-center justify-center gap-2 w-full py-3 bg-slate-800 text-white rounded-xl font-semibold hover:bg-slate-900 transition"
+              type="button"
+              onClick={() => {
+                setQrToken('');
+                setPlateNumber('');
+                setPhoneNumber('');
+              }}
+              className="text-xs text-slate-400 hover:text-slate-600 underline"
             >
-              <Printer size={18} /> QR 코드 인쇄하기
+              새로운 차량 등록하기
             </button>
           </div>
         )}
