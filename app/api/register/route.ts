@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// URL을 직접 고정하여 환경 변수 누락/형식 오류를 원천 차단합니다.
 const SUPABASE_URL = 'https://xufcnthlimejezxjldwt.supabase.co';
 
 export async function POST(req: Request) {
@@ -24,7 +23,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '차량 번호와 전화번호를 입력해주세요.' }, { status: 400 });
     }
 
-    const token = Math.random().toString(36).substring(2, 10);
+    // Supabase DB의 UUID 규격에 맞는 표준 고유 식별자 생성
+    const token = crypto.randomUUID();
 
     const { error } = await supabase.from('parking_cards').insert([
       {
