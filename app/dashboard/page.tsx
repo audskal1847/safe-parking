@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { getSupabase } from '@/lib/supabase';
 import { Car, QrCode, CheckCircle, Copy } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -23,20 +22,19 @@ export default function DashboardPage() {
     setErrorMsg('');
 
     try {
-      const token = Math.random().toString(36).substring(2, 10);
-      const supabase = getSupabase();
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plateNumber, phoneNumber }),
+      });
 
-      const { error } = await supabase.from('parking_cards').insert([
-        {
-          plate_number: plateNumber.replace(/\s+/g, ''),
-          phone_number: phoneNumber.replace(/[^0-9]/g, ''),
-          qr_token: token,
-        },
-      ]);
+      const data = await res.json();
 
-      if (error) throw error;
+      if (!res.ok) {
+        throw new Error(data.error || '등록에 실패했습니다.');
+      }
 
-      setQrToken(token);
+      setQrToken(data.token);
     } catch (err: any) {
       setErrorMsg(err.message || '등록 중 오류가 발생했습니다.');
     } finally {
