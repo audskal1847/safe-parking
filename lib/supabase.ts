@@ -1,9 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xufcnthlimejezxjldwt.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy';
+// 주소 앞뒤 공백 및 따옴표 제거, https:// 누락 시 자동 보정
+const getCleanUrl = () => {
+  let url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xufcnthlimejezxjldwt.supabase.co';
+  url = url.trim().replace(/^["']|["']$/g, '');
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = `https://${url}`;
+  }
+  return url;
+};
 
-// 호출될 때만 안전하게 클라이언트를 생성합니다 (빌드 타임 에러 원천 차단)
+const getCleanAnonKey = () => {
+  let key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  return key.trim().replace(/^["']|["']$/g, '');
+};
+
 export const getSupabase = () => {
-  return createClient(supabaseUrl, supabaseAnonKey);
+  const url = getCleanUrl();
+  const key = getCleanAnonKey() || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy';
+  return createClient(url, key);
 };
