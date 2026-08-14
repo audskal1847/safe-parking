@@ -1,21 +1,23 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// 외부로 노출되지 않는 안전한 서버 전용 클라이언트
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function POST(req: Request) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      return NextResponse.json({ error: '서버 환경 변수 설정이 누락되었습니다.' }, { status: 500 });
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
     const { qrToken, type, message } = await req.json();
 
     if (!qrToken) {
       return NextResponse.json({ error: '유효하지 않은 요청입니다.' }, { status: 400 });
     }
 
-    // 1. 서버 권한으로 차주 정보 조회 (전화번호는 외부에 노출되지 않음)
+    // 1. 차주 정보 조회
     const { data: card, error } = await supabaseAdmin
       .from('parking_cards')
       .select('phone_number, plate_number')
@@ -36,7 +38,6 @@ export async function POST(req: Request) {
       textToSend += `전달 메시지: "${message}"`;
     }
 
-    // 3. 발송 결과 터미널(CMD) 출력 (테스트용)
     console.log('--------------------------------------------------');
     console.log(`[알림 도착] 차주 번호: ${card.phone_number}`);
     console.log(`[내용]:\n${textToSend}`);
