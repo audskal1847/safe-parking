@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import QRCode from 'react-qr-code';
 import { supabase } from '@/lib/supabase';
-import { Car, Phone, QrCode, CheckCircle, Copy } from 'lucide-react';
+import { Car, QrCode, CheckCircle, Copy } from 'lucide-react';
 
 export default function DashboardPage() {
   const [plateNumber, setPlateNumber] = useState('');
@@ -46,6 +45,9 @@ export default function DashboardPage() {
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const callUrl = qrToken ? `${origin}/call/${qrToken}` : '';
+  const qrImageUrl = callUrl
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(callUrl)}`
+    : '';
 
   const copyToClipboard = () => {
     if (!callUrl) return;
@@ -69,30 +71,26 @@ export default function DashboardPage() {
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">차량 번호</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="예: 12가 3456"
-                  value={plateNumber}
-                  onChange={(e) => setPlateNumber(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  required
-                />
-              </div>
+              <input
+                type="text"
+                placeholder="예: 12가 3456"
+                value={plateNumber}
+                onChange={(e) => setPlateNumber(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                required
+              />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1">차주 연락처</label>
-              <div className="relative">
-                <input
-                  type="tel"
-                  placeholder="예: 010-1234-5678"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  required
-                />
-              </div>
+              <input
+                type="tel"
+                placeholder="예: 010-1234-5678"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                required
+              />
             </div>
 
             {errorMsg && <p className="text-xs text-rose-500">{errorMsg}</p>}
@@ -114,7 +112,7 @@ export default function DashboardPage() {
 
             <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center justify-center">
               <div className="bg-white p-4 rounded-xl shadow-sm">
-                <QRCode value={callUrl} size={180} />
+                <img src={qrImageUrl} alt="QR Code" width={180} height={180} className="block" />
               </div>
               <p className="text-base font-bold text-slate-800 mt-4">{plateNumber}</p>
               <p className="text-xs text-slate-400 mt-0.5">스마트폰으로 스캔하면 바로 안심 호출 페이지가 열립니다.</p>
