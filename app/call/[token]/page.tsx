@@ -1,19 +1,19 @@
 'use client';
 
-import { use, useState } from 'react';
+import { useState } from 'react';
+import { useParams } from 'next/navigation';
 import { MessageSquare, AlertTriangle, CheckCircle2, Car, Send } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
-
-export default function CallPage({ params }: { params: Promise<{ token: string }> }) {
-  const resolvedParams = use(params);
-  const qrToken = resolvedParams.token;
+export default function CallPage() {
+  const params = useParams();
+  const qrToken = params?.token as string;
 
   const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [sentType, setSentType] = useState('');
   const [customMsg, setCustomMsg] = useState('');
 
   const sendNotification = async (type: string, message: string = '') => {
+    if (!qrToken) return;
     setStatus('sending');
     setSentType(type);
 
@@ -46,7 +46,7 @@ export default function CallPage({ params }: { params: Promise<{ token: string }
         </p>
 
         {status === 'success' ? (
-          <div className="py-8 flex flex-col items-center animate-fade-in">
+          <div className="py-8 flex flex-col items-center">
             <CheckCircle2 size={56} className="text-emerald-500 mb-3" />
             <h3 className="text-lg font-bold text-slate-800">알림이 차주에게 전송되었습니다!</h3>
             <p className="text-xs text-slate-500 mt-1">확인 후 신속히 응답할 예정입니다.</p>
