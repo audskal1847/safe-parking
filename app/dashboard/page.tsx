@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 import { Car, QrCode, CheckCircle, Copy } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -24,6 +24,7 @@ export default function DashboardPage() {
 
     try {
       const token = Math.random().toString(36).substring(2, 10);
+      const supabase = getSupabase();
 
       const { error } = await supabase.from('parking_cards').insert([
         {
