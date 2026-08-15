@@ -86,24 +86,37 @@ export async function POST(req: Request) {
     }
 
     // 1. QR 토큰으로 차주 정보 조회
-    const { data: card, error: cardError } =
-      await supabase
-        .from('parking_cards')
-        .select(
-          'id, plate_number, kakao_refresh_token'
-        )
-        .eq('qr_token', qrToken)
-        .single();
+    console.log('========== NOTIFY DEBUG ==========');
+console.log('qrToken:', JSON.stringify(qrToken));
+console.log(
+  'SUPABASE_URL:',
+  SUPABASE_URL
+);
 
-    if (cardError || !card) {
-      return NextResponse.json(
-        {
-          error:
-            '차량 정보를 찾을 수 없습니다.',
-        },
-        { status: 404 }
-      );
-    }
+const { data: card, error: cardError } =
+  await supabase
+    .from('parking_cards')
+    .select(
+      'id, plate_number, qr_token, kakao_refresh_token'
+    )
+    .eq('qr_token', String(qrToken).trim())
+    .maybeSingle();
+
+console.log('card:', card);
+console.log('cardError:', cardError);
+
+if (cardError || !card) {
+  return NextResponse.json(
+    {
+      error: '차량 정보를 찾을 수 없습니다.',
+      debug: {
+        qrToken: String(qrToken).trim(),
+        cardError: cardError?.message || null,
+      },
+    },
+    { status: 404 }
+  );
+}
 
     // 2. 메시지 구성
     let title = '🚗 [차량 이동 요청]';
