@@ -222,17 +222,16 @@ if (cardError || !card) {
       VAPID_PRIVATE_KEY &&
       VAPID_EMAIL
     ) {
-      const { data: subscriptions } =
-        await supabase
-          .from('push_subscriptions')
-          .select(
-            'id, endpoint, p256dh, auth'
-          )
-          .eq(
-            'parking_card_id',
-            card.id
-          );
+      const { data: subscriptions, error: subscriptionError } =
+  await supabase
+    .from('push_subscriptions')
+    .select('id, parking_card_id, endpoint, p256dh, auth')
+    .eq('parking_card_id', card.id);
 
+console.log('========== PUSH DEBUG ==========');
+console.log('card.id:', card.id);
+console.log('subscriptions:', subscriptions);
+console.log('subscriptionError:', subscriptionError);
       if (subscriptions) {
         for (const subscription of subscriptions) {
           try {
