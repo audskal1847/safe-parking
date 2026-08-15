@@ -13,14 +13,16 @@ self.addEventListener('push', function (event) {
   const title = data.title || '🚗 안심주차 알림';
 
   const options = {
-    body: data.body || '차량에 연락이 왔습니다.',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    data: {
-      url: data.url || '/'
-    },
-    requireInteraction: true
-  };
+  body: data.body || '차량에 연락이 왔습니다.',
+  icon: '/icon-192.png',
+  badge: '/icon-192.png',
+  silent: false,
+  renotify: true,
+  data: {
+    url: data.url || '/'
+  },
+  requireInteraction: true
+};
 
   event.waitUntil(
     self.registration.showNotification(title, options)

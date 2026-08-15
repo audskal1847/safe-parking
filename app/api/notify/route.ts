@@ -218,10 +218,6 @@ if (cardError || !card) {
     .select('id, parking_card_id, endpoint, p256dh, auth')
     .eq('parking_card_id', card.id);
 
-console.log('========== PUSH DEBUG ==========');
-console.log('card.id:', card.id);
-console.log('subscriptions:', subscriptions);
-console.log('subscriptionError:', subscriptionError);
       if (subscriptions) {
         for (const subscription of subscriptions) {
           try {
