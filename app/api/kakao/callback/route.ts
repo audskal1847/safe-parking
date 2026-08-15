@@ -93,6 +93,7 @@ export async function GET(req: Request) {
         <div class="plate">${decodeURIComponent(plateNumber)}</div>
         <div class="desc">이 QR 코드를 인쇄하거나 캡처하여 차량에 부착하세요.</div>
         <button class="btn" onclick="window.print()">🖨️ QR 코드 인쇄하기</button>
+        <a href="/push-setup?qrToken=${encodeURIComponent(qrToken)}" class="btn" style="background-color:#16a34a; margin-top:10px;">🔔 주차 알림 켜기</a>
         <a href="/" class="btn btn-sub">다른 차량 등록하기</a>
       </div>
     </body>
