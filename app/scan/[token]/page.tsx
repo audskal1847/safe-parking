@@ -82,6 +82,16 @@ export default function ScanPage() {
           </div>
         ) : (
           <div className="space-y-3">
+<button
+  type="button"
+  onClick={() => {
+    window.location.href =
+      `/push-setup?qrToken=${encodeURIComponent(token)}`;
+  }}
+  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-2xl"
+>
+  🔔 휴대폰 알림 설정
+</button>
 
             <button
               onClick={() => sendNotification('MOVE')}
