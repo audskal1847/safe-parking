@@ -58,14 +58,20 @@ export async function POST(req: Request) {
         }
       );
 
-    if (error) {
-      console.error('Push 저장 오류:', error);
+   if (error) {
+console.error('Push save error:', error);
 
-      return NextResponse.json(
-        { error: 'Push 정보 저장 실패' },
-        { status: 500 }
-      );
-    }
+return NextResponse.json(
+{
+error: 'Push 정보 저장 실패',
+details: error.message,
+code: error.code,
+hint: error.hint,
+dbDetails: error.details,
+},
+{ status: 500 }
+);
+}
 
     return NextResponse.json({
       success: true
