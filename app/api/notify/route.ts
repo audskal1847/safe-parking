@@ -2,19 +2,16 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://xufcnthlimejezxjldwt.supabase.co';
-
-// 카카오 최신 인증 정보
 const KAKAO_REST_API_KEY = 'acb93c43a65de33ee589cbf0254e0ce7';
-const KAKAO_REFRESH_TOKEN = 'J5AvAf9fUlOA_BtGzLFZjXUgn4S-bbshAAAAAgoNFKMAAAGgA6O2N6j01SImjvGc';
 
-async function getKakaoAccessToken() {
+async function getKakaoAccessToken(refreshToken: string) {
   const res = await fetch('https://kauth.kakao.com/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       grant_type: 'refresh_token',
       client_id: KAKAO_REST_API_KEY,
-      refresh_token: KAKAO_REFRESH_TOKEN,
+      refresh_token: refreshToken,
     }),
   });
 
@@ -32,7 +29,7 @@ export async function POST(req: Request) {
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
     if (!serviceKey) {
-      return NextResponse.json({ error: 'Supabase Key가 누락되었습니다.' }, { status: 500 });
+      return NextResponse.json({ error: 'Supabase Key 누락' }, { status: 500 });
     }
 
     const supabase = createClient(SUPABASE_URL, serviceKey.trim());
@@ -42,10 +39,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '유효하지 않은 요청입니다.' }, { status: 400 });
     }
 
-    // 1. 등록 차량 조회
+    // 1. 등록 차량 및 해당 차주의 고유 토큰 조회
     const { data: card, error } = await supabase
       .from('parking_cards')
-      .select('phone_number, plate_number')
+      .select('plate_number, kakao_refresh_token')
       .eq('qr_token', qrToken)
       .single();
 
@@ -53,7 +50,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '차량 정보를 찾을 수 없습니다.' }, { status: 404 });
     }
 
-    // 2. 알림 메시지 구성
+    if (!card.kakao_refresh_token) {
+      return NextResponse.json({ error: '카카오 연동 정보가 없는 차량입니다.' }, { status: 400 });
+    }
+
+    // 2. 메시지 구성
     let title = '🚗 [차량 이동 요청]';
     let detail = '차량 이동 요청이 도착했습니다. 차량을 확인해 주세요.';
 
@@ -68,10 +69,10 @@ export async function POST(req: Request) {
     const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
     const textToSend = `[안심 주차 알림 도착]\n\n${title}\n• 차량번호: ${card.plate_number}\n• 내용: ${detail}\n• 시간: ${now}`;
 
-    // 3. 카카오 Access Token 발급
-    const accessToken = await getKakaoAccessToken();
+    // 3. 차주 본인의 Access Token 발급
+    const accessToken = await getKakaoAccessToken(card.kakao_refresh_token);
 
-    // 4. 내 카카오톡(나와의 채팅방)으로 메시지 발송
+    // 4. 차주 본인의 카카오톡으로 메시지 발송
     const templateObject = {
       object_type: 'text',
       text: textToSend,
@@ -79,7 +80,7 @@ export async function POST(req: Request) {
         web_url: 'https://safe-parking-git-main-audskal1847s-projects.vercel.app',
         mobile_web_url: 'https://safe-parking-git-main-audskal1847s-projects.vercel.app',
       },
-      button_title: '안심 주차 대시보드',
+      button_title: '안심 주차 서비스',
     };
 
     const kakaoParams = new URLSearchParams();
