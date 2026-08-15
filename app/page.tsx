@@ -10,7 +10,6 @@ export default function HomePage() {
       alert('차량 번호를 입력해 주세요.');
       return;
     }
-    // 차량 번호를 포함하여 카카오 로그인 시작
     window.location.href = `/api/kakao/login?plateNumber=${encodeURIComponent(plateNumber.trim())}`;
   };
 
