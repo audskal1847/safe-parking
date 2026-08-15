@@ -86,13 +86,6 @@ export async function POST(req: Request) {
     }
 
     // 1. QR 토큰으로 차주 정보 조회
-    console.log('========== NOTIFY DEBUG ==========');
-console.log('qrToken:', JSON.stringify(qrToken));
-console.log(
-  'SUPABASE_URL:',
-  SUPABASE_URL
-);
-
 const { data: card, error: cardError } =
   await supabase
     .from('parking_cards')
@@ -101,9 +94,6 @@ const { data: card, error: cardError } =
     )
     .eq('qr_token', String(qrToken).trim())
     .maybeSingle();
-
-console.log('card:', card);
-console.log('cardError:', cardError);
 
 if (cardError || !card) {
   return NextResponse.json(
